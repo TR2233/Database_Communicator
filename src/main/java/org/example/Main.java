@@ -9,16 +9,16 @@ public class Main {
         System.out.println("Hello, World!");
 
         try {
-            Connection connection = DriverManager.getConnection(JDBC_URL);
+//            Connection connection = DriverManager.getConnection(JDBC_URL);
 //            createTable(connection);
-            retrieveDatabase(connection);
+            retrieveDatabase();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static void retrieveDatabase(Connection connection) throws SQLException {
+    private static void retrieveDatabase() throws SQLException {
 
 
 
@@ -29,7 +29,7 @@ String dbPassword = "Federer!66";
  try {
             Connection connection1 = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
             System.out.println("Successfully connected to the database!");
-            connection.close();
+            connection1.close();
         } catch (SQLException e) {
             System.err.println("Error connecting to the database: " + e.getMessage());
         }
