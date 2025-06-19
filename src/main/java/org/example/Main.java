@@ -1,56 +1,89 @@
 package org.example;
 
+import java.io.*;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     static final String JDBC_URL = "jdbc:postgresql://localhost:5432/Historical_Data?currentSchema=public&user=postgres&password=Federer!66";
+    public static final String POWERSHELL_PROCESS_INPUT = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\TheAllFoldersSimplifiedHistoricalExtract.ps1\"";
+
 
     public static void main(String[] args) {
         System.out.println("Hello, World!");
 
-        try {
-            Connection connection = DriverManager.getConnection(JDBC_URL);
+        getLocalData();
+        String dbUrl = "jdbc:postgresql://localhost:6000/testDataBase";
+        String dbUser = "postgres";
+        String dbPassword = "Federer!66";
+//        FileWriter fileWriter = new FileWriter("test.csv");
+//        BufferedWriter bufferedWriter = new BufferedWriter();
+        try (Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
+//            ResultSet resultSet = retrieveDatabase(connection, getLocalData());
+            updateTable(connection, retrieveDatabase(connection, getLocalData()));
 //            createTable(connection);
-            retrieveDatabase(connection);
-
+            connection.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+//        test();
     }
 
-    private static void retrieveDatabase(Connection connection) throws SQLException {
+    private static ResultSet retrieveDatabase(Connection connection, List<LocalDateTime> localData) throws SQLException {
 
+        String earliestDate = localData.get(0).toString();
+        String latestDate = localData.getLast().toString();
+        List<LocalDateTime> SQLTimeStamps = new ArrayList<>();
+        String query = String.format("select * from \"MES_5MIN\" where \"TIMESTAMP\" >= '%s' and \"TIMESTAMP\" < '%s' order by \"TIMESTAMP\" DESC", earliestDate, latestDate);
+        System.out.println(earliestDate);
+        System.out.println(latestDate);
+        System.out.println(query);
 
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(query);
 
-        String dbUrl = "jdbc:postgresql://localhost:6000/testDataBase";
-String dbUser = "postgres";
-String dbPassword = "Federer!66";
-
- try {
-            Connection connection1 = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-            System.out.println("Successfully connected to the database!");
-            connection.close();
-        } catch (SQLException e) {
-            System.err.println("Error connecting to the database: " + e.getMessage());
+        while (resultSet.next()) {
+            LocalDateTime timeStamp = resultSet.getTimestamp("TIMESTAMP").toLocalDateTime();
+            SQLTimeStamps.add(LocalDateTime.of(timeStamp.toLocalDate(), timeStamp.toLocalTime()));
+            System.out.println(SQLTimeStamps.getLast().toString());
         }
-
-//        String query = "select \"DATE_TIME\" from \"MES_5MIN\"";
-//        try(Statement statement = connection.createStatement()) {
-//            ResultSet resultSet = statement.executeQuery(query);
-//            while (resultSet.next()) {
-//                System.out.println(resultSet.getString("DATE_TIME"));
-//            }
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-
-
+        System.out.format("Number of Timestamps: %d%n", SQLTimeStamps.size());
+        System.out.println("Successfully connected to the database!");
+        statement.close();
+        return resultSet;
     }
 
     private static void createTable(Connection connection) throws SQLException {
         Statement statement = connection.createStatement();
         String createTableStatement = "CREATE TABLE TASKS (id SERIAL PRIMARY KEY, name VARCHAR(255))";
         statement.execute(createTableStatement);
+        statement.close();
         System.out.println("Table created!!!");
+    }
+
+    private static void updateTable(Connection connection, ResultSet newEntries) throws SQLException {
+        Statement statement = connection.createStatement();
+//        String unionizeTables =
+    }
+
+    private static List<LocalDateTime> getLocalData() {
+        List<LocalDateTime> data = new ArrayList<>();
+
+        try (BufferedReader bufferedReader =
+                     new BufferedReader(new FileReader("C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Tickers\\MES\\5M\\Formatted_CSV_Files\\final_Historical_Ticker_Data\\MES_2024_12_10_2025_06_13.csv"));) {
+
+            bufferedReader.lines().forEach(line -> {
+                if (line.contains(":")) {
+                    data.add(LocalDateTime.parse(line.split(",")[1].replace("\"", "")));
+                }
+            });
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return data;
     }
 }
