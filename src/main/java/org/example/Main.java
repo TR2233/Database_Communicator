@@ -1,10 +1,13 @@
 package org.example;
 
+import java.awt.desktop.SystemSleepEvent;
 import java.io.*;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,15 +101,39 @@ public class Main {
     public static void powerShellScriptTest() {
         System.out.println("INITIATE POWERSHELL SCRIPT");
         try {
-           Process process =new ProcessBuilder()
-                   .directory(new File("C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0"))
-                   .command("powershell.exe", "C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\HelloWorld.ps1\"")
-                   .start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            bufferedReader.lines().forEach(System.out::println);
+            String googleCloudAuthProxyDirectory = "C:\\Google_Cloud\\";
+            String powershellDirectory = "C:/Windows/System32/WindowsPowerShell/v1.0";
+
+            String googleCloudAuthProxyExe = "cloud_sql_proxy.exe";
+            String powershellExe = "powershell.exe";
+
+            String scriptHelloWorld = "C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Scripts\\Hello_World.ps1";
+            String scriptMakeDirectory = "C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Scripts\\mkdirScript.ps1";
+            System.out.println(System.getProperty("user.dir"));
+            Map<String, String> getenv = System.getenv();
+            System.out.println();
+
+
+            Process process = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe","-p6000","avid-catalyst-461411-d2:europe-west3:test-database")
+                    .inheritIO()
+                    .start();
+            process.waitFor(2000, TimeUnit.MILLISECONDS);
+            ProcessHandle handle = process.toHandle();
+            System.out.println(handle.info().toString());
+            process.destroy();
+
+//             new ProcessBuilder()
+//                    .directory(new File(googleCloudAuthProxyDirectory))
+//                    .command(googleCloudAuthProxyExe)
+//                    .inheritIO()
+//                     .start().waitFor();
+
+
         } catch (IOException e) {
 //            Logger.getLogger(EndOfDayActivities.class.getName()).log(Level.SEVERE,null,e);
             System.out.println("Error thrown");
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
