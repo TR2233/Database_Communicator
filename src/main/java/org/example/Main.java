@@ -5,15 +5,24 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
     static final String JDBC_URL = "jdbc:postgresql://localhost:5432/Historical_Data?currentSchema=public&user=postgres&password=Federer!66";
-    public static final String POWERSHELL_PROCESS_INPUT = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\TheAllFoldersSimplifiedHistoricalExtract.ps1\"";
+    //    public static final String POWERSHELL_PROCESS_INPUT = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\TheAllFoldersSimplifiedHistoricalExtract.ps1\"";
+    public static final String POWERSHELL_PROCESS_INPUT = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\Hello_world.ps1\"";
+    public static final String POWERSHELL_PROCESS_DIRECTORY = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\Hello_world.ps1\"";
 
 
     public static void main(String[] args) {
-        System.out.println("Hello, World!");
+        System.out.println("Start Program");
 
+//        runDatabaseCode();
+        powerShellScriptTest();
+    }
+
+    private static void runDatabaseCode() {
         getLocalData();
         String dbUrl = "jdbc:postgresql://localhost:6000/testDataBase";
         String dbUser = "postgres";
@@ -28,7 +37,6 @@ public class Main {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-//        test();
     }
 
     private static ResultSet retrieveDatabase(Connection connection, List<LocalDateTime> localData) throws SQLException {
@@ -85,5 +93,21 @@ public class Main {
         }
 
         return data;
+    }
+
+    public static void powerShellScriptTest() {
+        System.out.println("INITIATE POWERSHELL SCRIPT");
+        try {
+           Process process =new ProcessBuilder()
+                   .directory(new File("C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0"))
+                   .command("powershell.exe", "C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\HelloWorld.ps1\"")
+                   .start();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            bufferedReader.lines().forEach(System.out::println);
+        } catch (IOException e) {
+//            Logger.getLogger(EndOfDayActivities.class.getName()).log(Level.SEVERE,null,e);
+            System.out.println("Error thrown");
+            throw new RuntimeException(e);
+        }
     }
 }
