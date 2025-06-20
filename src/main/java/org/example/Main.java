@@ -1,15 +1,11 @@
 package org.example;
 
-import java.awt.desktop.SystemSleepEvent;
 import java.io.*;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Main {
     static final String JDBC_URL = "jdbc:postgresql://localhost:5432/Historical_Data?currentSchema=public&user=postgres&password=Federer!66";
@@ -18,26 +14,38 @@ public class Main {
     public static final String POWERSHELL_PROCESS_DIRECTORY = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\Hello_world.ps1\"";
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.out.println("Start Program");
-
-//        runDatabaseCode();
-        powerShellScriptTest();
+        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
+                .inheritIO();
+        runDatabaseCode(processBuilder);
     }
 
-    private static void runDatabaseCode() {
+    private static void runDatabaseCode(ProcessBuilder processBuilder) {
         getLocalData();
         String dbUrl = "jdbc:postgresql://localhost:6000/testDataBase";
         String dbUser = "postgres";
         String dbPassword = "Federer!66";
+        Process googleAuthProxyProcess = null;
+        Connection connection = null;
 //        FileWriter fileWriter = new FileWriter("test.csv");
 //        BufferedWriter bufferedWriter = new BufferedWriter();
-        try (Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
-//            ResultSet resultSet = retrieveDatabase(connection, getLocalData());
+        try {
+            googleAuthProxyProcess = processBuilder.start();
+            googleAuthProxyProcess.waitFor(2000, TimeUnit.MILLISECONDS);
+            connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+            System.out.println("Successfully connected to the database!");
+
             updateTable(connection, retrieveDatabase(connection, getLocalData()));
-//            createTable(connection);
             connection.close();
-        } catch (SQLException e) {
+            googleAuthProxyProcess.destroy();
+//            createTable(connection);
+        } catch (SQLException | IOException e) {
+            if (googleAuthProxyProcess != null) {
+                googleAuthProxyProcess.destroy();
+            }
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -61,7 +69,6 @@ public class Main {
             System.out.println(SQLTimeStamps.getLast().toString());
         }
         System.out.format("Number of Timestamps: %d%n", SQLTimeStamps.size());
-        System.out.println("Successfully connected to the database!");
         statement.close();
         return resultSet;
     }
@@ -75,15 +82,17 @@ public class Main {
     }
 
     private static void updateTable(Connection connection, ResultSet newEntries) throws SQLException {
+
         Statement statement = connection.createStatement();
-//        String unionizeTables =
+//        statement.execute()
+
     }
 
     private static List<LocalDateTime> getLocalData() {
         List<LocalDateTime> data = new ArrayList<>();
 
         try (BufferedReader bufferedReader =
-                     new BufferedReader(new FileReader("C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Tickers\\MES\\5M\\Formatted_CSV_Files\\final_Historical_Ticker_Data\\MES_2024_12_10_2025_06_13.csv"));) {
+                     new BufferedReader(new FileReader("C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Tickers\\MES\\5M\\Formatted_CSV_Files\\final_Historical_Ticker_Data\\MES_2024_12_10_2025_06_17.csv"))) {
 
             bufferedReader.lines().forEach(line -> {
                 if (line.contains(":")) {
@@ -109,26 +118,15 @@ public class Main {
 
             String scriptHelloWorld = "C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Scripts\\Hello_World.ps1";
             String scriptMakeDirectory = "C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Scripts\\mkdirScript.ps1";
-            System.out.println(System.getProperty("user.dir"));
-            Map<String, String> getenv = System.getenv();
-            System.out.println();
 
 
-            Process process = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe","-p6000","avid-catalyst-461411-d2:europe-west3:test-database")
+            Process process = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
                     .inheritIO()
                     .start();
             process.waitFor(2000, TimeUnit.MILLISECONDS);
             ProcessHandle handle = process.toHandle();
             System.out.println(handle.info().toString());
             process.destroy();
-
-//             new ProcessBuilder()
-//                    .directory(new File(googleCloudAuthProxyDirectory))
-//                    .command(googleCloudAuthProxyExe)
-//                    .inheritIO()
-//                     .start().waitFor();
-
-
         } catch (IOException e) {
 //            Logger.getLogger(EndOfDayActivities.class.getName()).log(Level.SEVERE,null,e);
             System.out.println("Error thrown");
