@@ -1,19 +1,20 @@
 package org.example;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
         System.out.println("Start Program");
-//        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
-//                .inheritIO();
+        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
+                .inheritIO();
 //        runDatabaseCode(processBuilder);
     }
 
@@ -24,8 +25,6 @@ public class Main {
         String dbPassword = "Federer!66";
         Process googleAuthProxyProcess = null;
         Connection connection = null;
-//        FileWriter fileWriter = new FileWriter("test.csv");
-//        BufferedWriter bufferedWriter = new BufferedWriter();
         try {
             googleAuthProxyProcess = processBuilder.start();
             googleAuthProxyProcess.waitFor(2000, TimeUnit.MILLISECONDS);
