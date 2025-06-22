@@ -6,19 +6,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 public class Main {
-    static final String JDBC_URL = "jdbc:postgresql://localhost:5432/Historical_Data?currentSchema=public&user=postgres&password=Federer!66";
-    //    public static final String POWERSHELL_PROCESS_INPUT = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\TheAllFoldersSimplifiedHistoricalExtract.ps1\"";
-    public static final String POWERSHELL_PROCESS_INPUT = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\Hello_world.ps1\"";
-    public static final String POWERSHELL_PROCESS_DIRECTORY = "\"C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\Hello_world.ps1\"";
-
 
     public static void main(String[] args) throws IOException {
         System.out.println("Start Program");
-        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
-                .inheritIO();
-        runDatabaseCode(processBuilder);
+//        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
+//                .inheritIO();
+//        runDatabaseCode(processBuilder);
     }
 
     private static void runDatabaseCode(ProcessBuilder processBuilder) {
@@ -36,7 +32,7 @@ public class Main {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
             System.out.println("Successfully connected to the database!");
 
-            updateTable(connection, retrieveDatabase(connection, getLocalData()));
+            updateTable(connection, getLocalData());
             connection.close();
             googleAuthProxyProcess.destroy();
 //            createTable(connection);
@@ -50,12 +46,12 @@ public class Main {
         }
     }
 
-    private static ResultSet retrieveDatabase(Connection connection, List<LocalDateTime> localData) throws SQLException {
+    private static List<LocalDateTime> retrieveDatabase(Connection connection, List<LocalDateTime> localData) throws SQLException {
 
         String earliestDate = localData.get(0).toString();
         String latestDate = localData.getLast().toString();
         List<LocalDateTime> SQLTimeStamps = new ArrayList<>();
-        String query = String.format("select * from \"MES_5MIN\" where \"TIMESTAMP\" >= '%s' and \"TIMESTAMP\" < '%s' order by \"TIMESTAMP\" DESC", earliestDate, latestDate);
+        String query = String.format("select * from \"MES_5MIN\" where \"TIMESTAMP\" >= '%s' and \"TIMESTAMP\" < '%s' order by \"TIMESTAMP\"", earliestDate, latestDate);
         System.out.println(earliestDate);
         System.out.println(latestDate);
         System.out.println(query);
@@ -70,7 +66,7 @@ public class Main {
         }
         System.out.format("Number of Timestamps: %d%n", SQLTimeStamps.size());
         statement.close();
-        return resultSet;
+        return SQLTimeStamps;
     }
 
     private static void createTable(Connection connection) throws SQLException {
@@ -81,7 +77,20 @@ public class Main {
         System.out.println("Table created!!!");
     }
 
-    private static void updateTable(Connection connection, ResultSet newEntries) throws SQLException {
+    private static void updateTable(Connection connection, List<LocalDateTime> localData) throws SQLException {
+
+        List<LocalDateTime> databaseEntries = retrieveDatabase(connection, localData);
+        List<LocalDateTime> newDataToInsert = new ArrayList<>();
+
+        outerLoop:
+        for (LocalDateTime localDatum : localData) {
+            for (LocalDateTime databaseEntry : databaseEntries) {
+                if (localDatum.isEqual(databaseEntry)) {
+                    continue outerLoop;
+                }
+            }
+            newDataToInsert.add(localDatum);
+        }
 
         Statement statement = connection.createStatement();
 //        statement.execute()
@@ -92,7 +101,7 @@ public class Main {
         List<LocalDateTime> data = new ArrayList<>();
 
         try (BufferedReader bufferedReader =
-                     new BufferedReader(new FileReader("C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Tickers\\MES\\5M\\Formatted_CSV_Files\\final_Historical_Ticker_Data\\MES_2024_12_10_2025_06_17.csv"))) {
+                     new BufferedReader(new FileReader("C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Tickers\\MES\\5M\\Formatted_CSV_Files\\final_Historical_Ticker_Data\\MES_2024_12_10_2025_06_13.csv"))) {
 
             bufferedReader.lines().forEach(line -> {
                 if (line.contains(":")) {
@@ -116,8 +125,8 @@ public class Main {
             String googleCloudAuthProxyExe = "cloud_sql_proxy.exe";
             String powershellExe = "powershell.exe";
 
-            String scriptHelloWorld = "C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Scripts\\Hello_World.ps1";
-            String scriptMakeDirectory = "C:\\Users\\lenovo\\Documents\\Historical_Stock_Data\\Scripts\\mkdirScript.ps1";
+            String scriptHelloWorld = "C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\Hello_World.ps1";
+            String scriptMakeDirectory = "C:\\Users\\treim\\Documents\\Historical_Stock_Data\\Scripts\\mkdirScript.ps1";
 
 
             Process process = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
