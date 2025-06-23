@@ -26,14 +26,12 @@ public class DB_Communicator {
 
     public static synchronized List<List<String>> retrieveCandleData(Map<String, List<String>> timeFrameAndSecuritiesMap, LocalDateTime startLocalDate, LocalDateTime endLocalDate) throws IOException, InterruptedException {
 
-//        Map<Time_Frame, List<Security>> db_TimeFrameAndSecuritiesMap = timeFrameAndSecuritiesMap.entrySet().stream()
-//                .map(entry-> Map.entry(Time_Frame.valueOf(entry.getKey()), entry.getValue().stream().map(Security::valueOf).toList())).collect(Collectors.toMap())
 
-        Map<Time_Frame, List<Security>> db_TimeFrameAndSecuritiesMap = timeFrameAndSecuritiesMap.entrySet().stream().collect(Collectors.toMap((HashMap.Entry<String,List<String>>) entry -> ,));
-
-//        timeFrameAndSecuritiesMap.forEach((timeframe, securities) ->
-//                db_TimeFrameAndSecuritiesMap
-//                        .put(Time_Frame.valueOf(timeframe), securities.stream().map(Security::valueOf).toList()));
+        //Transform given string map into corresponding TimeFrame Securities map
+        Map<Time_Frame, List<Security>> db_TimeFrameAndSecuritiesMap = timeFrameAndSecuritiesMap.entrySet()
+                .stream()
+                .collect(Collectors
+                        .toMap((entry -> Time_Frame.valueOf(entry.getKey())), entry -> entry.getValue().stream().map(Security::valueOf).toList()));
 
 
         if (googleAuthProxyProcess == null) {
@@ -41,36 +39,35 @@ public class DB_Communicator {
             googleAuthProxyProcess.waitFor(2000, TimeUnit.MILLISECONDS);
         }
 
-        initiateGoogleAuthProxy();
 
 
         return null;
     }
 
-    private static void initiateGoogleAuthProxy() {
-        String dbUrl = "jdbc:postgresql://localhost:6000/testDataBase";
-        String dbUser = "postgres";
-        String dbPassword = "Federer!66";
-        Process googleAuthProxyProcess = null;
-        Connection connection;
-        try {
-            googleAuthProxyProcess = processBuilder.start();
-            googleAuthProxyProcess.waitFor(2000, TimeUnit.MILLISECONDS);
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-            System.out.println("Successfully connected to the database!");
-
-            updateTable(connection, getLocalData());
-            connection.close();
-            googleAuthProxyProcess.destroy();
-//            createTable(connection);
-        } catch (SQLException | IOException e) {
-            if (googleAuthProxyProcess != null) {
-                googleAuthProxyProcess.destroy();
-            }
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
+//    private static void initiateGoogleAuthProxy() {
+//        String dbUrl = "jdbc:postgresql://localhost:6000/testDataBase";
+//        String dbUser = "postgres";
+//        String dbPassword = "Federer!66";
+//        Process googleAuthProxyProcess = null;
+//        Connection connection;
+//        try {
+//            googleAuthProxyProcess = processBuilder.start();
+//            googleAuthProxyProcess.waitFor(2000, TimeUnit.MILLISECONDS);
+//            connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+//            System.out.println("Successfully connected to the database!");
+//
+////            updateTable(connection, getLocalData());
+//            connection.close();
+//            googleAuthProxyProcess.destroy();
+////            createTable(connection);
+//        } catch (SQLException | IOException e) {
+//            if (googleAuthProxyProcess != null) {
+//                googleAuthProxyProcess.destroy();
+//            }
+//            throw new RuntimeException(e);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//    }
 }
