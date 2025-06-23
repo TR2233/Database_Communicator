@@ -6,15 +6,28 @@ import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
         System.out.println("Start Program");
-        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
-                .inheritIO();
+        Map<String, List<String>> testMap = new HashMap<>();
+        List<String> testList = new ArrayList<>();
+        testList.add("MES");
+        testList.add("MES");
+        testMap.put("FIVE_MINUTE", testList);
+        try {
+            Map<String, List<ResultSet>> stringListMap = DB_Communicator.retrieveCandleData(testMap, LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
+            System.out.println();
+        } catch (InterruptedException | SQLException e) {
+            throw new RuntimeException(e);
+        }
+//        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
+//                .inheritIO();
 //        runDatabaseCode(processBuilder);
     }
 
