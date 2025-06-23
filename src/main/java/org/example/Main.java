@@ -21,7 +21,7 @@ public class Main {
         testList.add("MES");
         testMap.put("FIVE_MINUTE", testList);
         try {
-            Map<String, List<ResultSet>> stringListMap = DB_Communicator.retrieveCandleData(testMap, LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
+            Map<String, List<List<String >>> stringListMap = DB_Communicator.retrieveCandleData(testMap, LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
             System.out.println();
         } catch (InterruptedException | SQLException e) {
             throw new RuntimeException(e);
