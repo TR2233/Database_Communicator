@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         System.out.println("Start Program");
         Map<String, List<String>> testMap = new HashMap<>();
         List<String> testList = new ArrayList<>();
@@ -21,11 +21,11 @@ public class Main {
         testList.add("MES");
         testMap.put("FIVE_MINUTE", testList);
         try {
-            Map<String, List<List<String >>> stringListMap = DB_Communicator.retrieveCandleData(testMap, LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
-            System.out.println();
-        } catch (InterruptedException | SQLException e) {
+            Map<String, Map<String, List<List<String>>>> stringListMap = DB_Communicator.retrieveCandleData(testMap, LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
+        } catch (IOException | InterruptedException | SQLException e) {
             throw new RuntimeException(e);
         }
+        System.out.println();
 //        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
 //                .inheritIO();
 //        runDatabaseCode(processBuilder);
