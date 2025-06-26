@@ -16,13 +16,16 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Start Program");
         Map<String, List<String>> testMap = new HashMap<>();
-        List<String> testList = new ArrayList<>();
-        testList.add("MES");
-        testList.add("MES");
-        testMap.put("FIVE_MINUTE", testList);
+        List<List<String>> testList = new ArrayList<>();
+        List<String> testList2 = new ArrayList<>();
+        testList.add(List.of("MES",LocalDateTime.of(2024,12,10,9,30).toString(),""));
+        testList.add(List.of("MES",LocalDateTime.of(2024,12,11,9,30).toString(),""));
+//        testList.add(List.of("MES",LocalDateTime.of(2025,12,10,9,30).toString(),""));
+//        testMap.put("FIVE_MINUTE", testList);
         DB_Communicator db_communicator = DB_Communicator.getInstance();
         db_communicator.connectToDatabase();
-        List<List<String>> stringListMap = db_communicator.retrieveCandleData("FIVE_MINUTE","MES", LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
+//        List<List<String>> stringListMap = db_communicator.retrieveCandleData("FIVE_MINUTE","MES", LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
+        db_communicator.updateCandleDatabaseTable("FIVE_MINUTE","MES",testList);
         System.out.println();
         db_communicator.disconnectFromDatabase();
 //        ProcessBuilder processBuilder = new ProcessBuilder("C:\\Google_Cloud\\cloud_sql_proxy.exe", "-p6000", "avid-catalyst-461411-d2:europe-west3:test-database")
