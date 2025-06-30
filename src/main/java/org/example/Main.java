@@ -20,11 +20,12 @@ public class Main {
         List<List<String>> localData = getLocalData();
 //        System.out.println();
         DB_Communicator db_communicator = DB_Communicator.getInstance();
-        db_communicator.connectToDatabase();
-//        List<List<String>> stringListMap = db_communicator.retrieveCandleData("FIVE_MINUTE","MES", LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
-        db_communicator.updateCandleDatabaseTable("FIVE_MINUTE", "MES", getLocalData());
-//        System.out.println();
+        db_communicator.connectToDatabase("ES");
+        List<List<String>> stringListMap = db_communicator.retrieveCandleData("FIVE_MINUTE", LocalDateTime.of(2025, 1, 1, 0, 0), LocalDateTime.now());
+//        db_communicator.updateCandleDatabaseTable("FIVE_MINUTE", "MES", getLocalData());
         db_communicator.disconnectFromDatabase();
+        System.out.println();
+
     }
 
 
@@ -38,7 +39,7 @@ public class Main {
                 if (line.contains(":")) {
 //                    data.add(LocalDateTime.parse(line.split(",")[1].replace("\"", "")));
 //                    line.split(",").toString();
-                    data.add(Arrays.stream(line.replace("\"","").split(",")).toList());
+                    data.add(Arrays.stream(line.replace("\"", "").split(",")).toList());
                 }
             });
 

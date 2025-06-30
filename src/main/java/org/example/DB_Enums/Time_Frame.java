@@ -23,10 +23,4 @@ public enum Time_Frame {
     };
 
     public abstract String getDatabaseAbbreviation();
-
-    public String getDatabaseAbbreviation(String securityName) {
-        return securityName + "_" + getDatabaseAbbreviation();
-    }
-
-    ;
 }

@@ -2,8 +2,8 @@ package org.example;
 
 public class StringResources {
     //DATA BASE STRINGS
-    public static final String DB_URL = "jdbc:postgresql://localhost:6000/testDataBase";
-    public static final String DB_USER = "postgres";
+    public static final String DB_URL = "jdbc:postgresql://localhost:6000";
+    public static final String DB_USER = "Lenovo";
     public static final String DB_PASSWORD = "Federer!66";
     public static final String FIVE_MINUTE_ABBREVIATION = "5MIN";
     public static final String FIFTEEN_MINUTE_ABBREVIATION = "15MIN";

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 
 public class DB_Communicator {
@@ -31,16 +32,22 @@ public class DB_Communicator {
         return instance;
     }
 
-    public void connectToDatabase() {
+    public void connectToDatabase(String security) {
         try {
             googleAuthProxyProcess = googleAuthProxyProcessBuilder.start();
             googleAuthProxyProcess.waitFor(2000, TimeUnit.MILLISECONDS);
-            db_Connection = DriverManager.getConnection(StringResources.DB_URL, StringResources.DB_USER, StringResources.DB_PASSWORD);
+            db_Connection = DriverManager.getConnection(createDB_URL(security), StringResources.DB_USER, StringResources.DB_PASSWORD);
         } catch (IOException | InterruptedException | SQLException e) {
             googleAuthProxyProcess.destroy();
             throw new RuntimeException(e);
         }
-        System.out.println("SUCCESSFULLY STARTED GOOGLE AUTH PROXY PROCESS AND CONNECTED TO DATABASE");
+        System.out.printf("SUCCESSFULLY STARTED GOOGLE AUTH PROXY PROCESS AND CONNECTED TO %s HISTORICAL DATABASE%n", security);
+    }
+
+    private String createDB_URL(String security) {
+
+
+        return new StringJoiner("/").add(StringResources.DB_URL).add(Security.valueOf(security).toString()).toString();
     }
 
     public void disconnectFromDatabase() {
@@ -54,7 +61,7 @@ public class DB_Communicator {
     }
 
 
-    public synchronized List<List<String>> retrieveCandleData(String timeframe, String security, LocalDateTime startLocalDate, LocalDateTime endLocalDate) {
+    public synchronized List<List<String>> retrieveCandleData(String timeframe, LocalDateTime startLocalDate, LocalDateTime endLocalDate) {
         List<List<String>> candleValues = new ArrayList<>();
 
         if (!googleAuthProxyProcess.isAlive()) {
@@ -62,27 +69,28 @@ public class DB_Communicator {
             System.out.println("RETURNING EMPTY LIST OF CANDLE DATA!");
         } else {
 
-            String query = String.format("select * from \"%s\" where \"TIMESTAMP\" >= '%s' and \"TIMESTAMP\" <= '%s' order by \"TIMESTAMP\""
-                    , Time_Frame.valueOf(timeframe).getDatabaseAbbreviation(Security.valueOf(security).toString()), startLocalDate, endLocalDate);
             try {
+                String query = String.format("select * from \"%s\" where \"DATE_TIME\" >= '%s' and \"DATE_TIME\" <= '%s' order by \"DATE_TIME\""
+                        , Time_Frame.valueOf(timeframe).getDatabaseAbbreviation(), startLocalDate, endLocalDate);
                 ResultSet resultSet = db_Connection.createStatement().executeQuery(query);
                 while (resultSet.next()) {
                     candleValues.add(getDb_CandleResult(resultSet));
                 }
-            } catch (SQLException e) {
+            } catch (SQLException | IllegalArgumentException e) {
                 if (googleAuthProxyProcess.isAlive()) {
                     googleAuthProxyProcess.destroy();
                 }
                 throw new RuntimeException(e);
             }
         }
+        System.out.println("CANDLE RETRIEVAL SUCCESSFUL. RETURNING THE DATA NOW");
         return candleValues;
     }
 
     private List<String> getDb_CandleResult(ResultSet resultSet) throws SQLException {
         List<String> db_RowResult = new ArrayList<>();
-        db_RowResult.add(resultSet.getString(CandleDataPoint.TICKER.toString()));
-        db_RowResult.add(resultSet.getTimestamp(CandleDataPoint.TIMESTAMP.toString()).toLocalDateTime().toString());
+        db_RowResult.add(resultSet.getString(CandleDataPoint.SYMBOL.toString()));
+        db_RowResult.add(resultSet.getTimestamp(CandleDataPoint.DATE_TIME.toString()).toLocalDateTime().toString());
         db_RowResult.add(String.valueOf(resultSet.getDouble(CandleDataPoint.OPEN.toString())));
         db_RowResult.add(String.valueOf(resultSet.getDouble(CandleDataPoint.HIGH.toString())));
         db_RowResult.add(String.valueOf(resultSet.getDouble(CandleDataPoint.LOW.toString())));
@@ -95,7 +103,7 @@ public class DB_Communicator {
     //must be in the order of ticker, timestamp, open, high, low, close, previous_close, volume!
     // I understand that this is poor design and perhaps later I can remedy it somehow, I hope
     // Outer map key value is Timeframe and inner map key is ticker name
-    public synchronized void updateCandleDatabaseTable(String timeframe, String security, List<List<String>> suppliedCandleValues) {
+    private synchronized void updateCandleDatabaseTable(String timeframe, List<List<String>> suppliedCandleValues) {
         if (!googleAuthProxyProcess.isAlive()) {
             System.out.println("GOOGLE AUTH PROXY PROCESS NOT RUNNING!");
             System.out.println("CLOUD DATA NOT UPDATED!");
@@ -104,27 +112,25 @@ public class DB_Communicator {
             LocalDateTime earliestDate = LocalDateTime.parse(suppliedCandleValues.getFirst().get(1));
             LocalDateTime latestDate = LocalDateTime.parse(suppliedCandleValues.getLast().get(1));
             System.out.println(latestDate);
-            List<LocalDateTime> currentCandleDatabaseTimeStamps = retrieveCandleData(timeframe, security, earliestDate, latestDate).stream().map(tableRow -> LocalDateTime.parse(tableRow.get(1))).toList();
+            List<LocalDateTime> currentCandleDatabaseTimeStamps = retrieveCandleData(timeframe, earliestDate, latestDate).stream().map(tableRow -> LocalDateTime.parse(tableRow.get(1))).toList();
             List<List<String>> filteredSuppliedCandleRows = suppliedCandleValues.stream()
                     .filter(candleValues -> Collections.binarySearch(currentCandleDatabaseTimeStamps, LocalDateTime.parse(candleValues.get(1))) < 0).toList();
 
             try {
                 Statement statement = db_Connection.createStatement();
                 for (List<String> row : filteredSuppliedCandleRows) { //seems table and column names must be surrounded by quotes
-                    String format = String.format("insert into \"%s\"(\"TICKER\", \"TIMESTAMP\", \"OPEN\", \"HIGH\", \"LOW\", \"CLOSE\", \"PREVIOUS_CLOSE\", \"VOLUME\") values (%s)"
-                            , Time_Frame.valueOf(timeframe).getDatabaseAbbreviation(Security.valueOf(security).toString())
-                            , String.format("'%s','%s',%s", row.get(0), row.get(1), row.subList(2, row.size()).toString().replaceAll("[\\[\\]]", ""))); // assumed column names with strings or timestamps must be surrounded by '
-                    System.out.println(LocalDateTime.parse(row.get(1)));
+                    String format = String.format("insert into \"%s\"(\"TICKER\", \"DATE_TIME\", \"OPEN\", \"HIGH\", \"LOW\", \"CLOSE\", \"PREVIOUS_CLOSE\", \"VOLUME\") values (%s)"
+                            , Time_Frame.valueOf(timeframe)
+                            , String.format("'%s','%s',%s", row.get(0), row.get(1), row.subList(2, row.size()).toString().replaceAll("[\\[\\]]", ""))); // assumed column names with strings or timestamps must be surrounded by ' character
                     System.out.println(statement.executeUpdate(format));
-                    System.out.println();
-//                    break;
                 }
-            } catch (SQLException e) {
+            } catch (SQLException | IllegalArgumentException e) {
                 if (googleAuthProxyProcess.isAlive()) {
                     googleAuthProxyProcess.destroy();
                 }
                 throw new RuntimeException(e);
             }
+            System.out.println("CANDLE INSERTION SUCCESSFUL");
         }
     }
 }
